@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:week02/screens/home_screen.dart';
 import 'package:week02/screens/register_screen.dart';
+import 'package:week02/service/auth_service.dart';
 import 'package:week02/theme/foundation/app_theme.dart';
 import 'package:week02/theme/light_theme.dart';
 import 'package:week02/util/snackbar.dart';
@@ -25,6 +26,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
   late final AppTheme theme = LightTheme();
 
+  bool isLoading = false;
+
   @override
   void dispose() {
     // 메모리 누수 방지를 위한 컨트롤러 해제
@@ -43,91 +46,120 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: theme.color.surface,
         resizeToAvoidBottomInset: false,
         body: SafeArea(
-          child: Column(
-            children: [
-              // 1. 메인 콘텐츠 영역 (스크롤 가능)
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: ClampingScrollPhysics(),
-                  child: Column(
-                    children: [
-                      // EOS 로고 표시
-                      Container(
-                        alignment: Alignment.center,
-                        padding: const EdgeInsets.only(top: 40, bottom: 24),
-                        child: Image.asset(
-                          'assets/images/eos_logo.png',
-                          width: 360,
-                          height: 144,
+          child: Stack(children: [
+            // 1. 메인 콘텐츠 영역 (스크롤 가능)
+            Column(
+              children: [
+                // 1. 메인 콘텐츠 영역 (스크롤 가능)
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: ClampingScrollPhysics(),
+                    child: Column(
+                      children: [
+                        // EOS 로고 표시
+                        Container(
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.only(top: 40, bottom: 24),
+                          child: Image.asset(
+                            'assets/images/eos_logo.png',
+                            width: 360,
+                            height: 144,
+                          ),
                         ),
-                      ),
 
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 이메일 입력 필드
-                            _buildTextField(
-                              controller: _emailController,
-                              labelText: '이메일',
-                              prefixIcon: Icons.email_outlined,
-                              keyboardType: TextInputType.emailAddress,
-                            ),
-
-                            const SizedBox(height: 16),
-
-                            // 비밀번호 입력 필드
-                            _buildTextField(
-                              controller: _passwordController,
-                              labelText: '비밀번호',
-                              prefixIcon: Icons.lock_outline,
-                              obscureText: !_isPasswordVisible,
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _isPasswordVisible
-                                      ? Icons.visibility_off
-                                      : Icons.visibility,
-                                  color: theme.color.subtext,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _isPasswordVisible = !_isPasswordVisible;
-                                  });
-                                },
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 이메일 입력 필드
+                              _buildTextField(
+                                controller: _emailController,
+                                labelText: '이메일',
+                                prefixIcon: Icons.email_outlined,
+                                keyboardType: TextInputType.emailAddress,
                               ),
-                            ),
 
-                            const SizedBox(height: 24),
+                              const SizedBox(height: 16),
 
-                            // 로그인 버튼
-                            _buildButton(
-                              text: '로그인',
-                              onPressed: () => _handleEmailLogin(context),
-                              backgroundColor: theme.color.primary,
-                              textColor: theme.color.onPrimary,
-                            ),
+                              // 비밀번호 입력 필드
+                              _buildTextField(
+                                controller: _passwordController,
+                                labelText: '비밀번호',
+                                prefixIcon: Icons.lock_outline,
+                                obscureText: !_isPasswordVisible,
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _isPasswordVisible
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                    color: theme.color.subtext,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _isPasswordVisible = !_isPasswordVisible;
+                                    });
+                                  },
+                                ),
+                              ),
 
-                            const SizedBox(height: 16),
+                              const SizedBox(height: 24),
 
-                            // 비밀번호 찾기 & 회원가입 링크
-                            _buildAccountActions(),
-                          ],
+                              // 로그인 버튼
+                              _buildButton(
+                                text: '로그인',
+                                onPressed: () => _handleEmailLogin(context),
+                                backgroundColor: theme.color.primary,
+                                textColor: theme.color.onPrimary,
+                              ),
+
+                              const SizedBox(height: 16),
+
+                              // 비밀번호 찾기 & 회원가입 링크
+                              _buildAccountActions(),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // 2. 소셜 로그인 영역 - 고정 위치에 배치
+                Material(
+                  elevation: 0,
+                  color: theme.color.surface,
+                  child: _buildSocialLoginSection(),
+                ),
+              ],
+            ),
+
+            // 로딩 오버레이
+            if (isLoading)
+              Container(
+                width: double.infinity,
+                height: double.infinity,
+                color: Colors.black.withOpacity(0.5),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        color: theme.color.primary,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        '로그인 중이에요',
+                        style: theme.typo.subtitle1.copyWith(
+                          color: theme.color.primary,
+                          fontWeight: theme.typo.medium,
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-
-              // 2. 소셜 로그인 영역 - 고정 위치에 배치
-              Material(
-                elevation: 0,
-                color: theme.color.surface,
-                child: _buildSocialLoginSection(),
-              ),
-            ],
-          ),
+          ]),
         ),
       ),
     );
@@ -374,6 +406,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// 이메일 로그인 처리 메서드
   Future<void> _handleEmailLogin(BuildContext context) async {
+    setState(() {
+      isLoading = true;
+    });
     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
         .hasMatch(_emailController.text)) {
       showErrorSnackBar(context, '이메일 형식이 올바르지 않습니다.');
@@ -403,33 +438,58 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (e) {
       showErrorSnackBar(context, e.toString());
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
   /// 카카오 로그인 처리 메서드
-  void _handleKakaoLogin(BuildContext context) {
-    // 카카오 로그인 로직 구현 위치
-    _showLoginMessage(context, '카카오');
+  void _handleKakaoLogin(BuildContext context) async {
+    setState(() {
+      isLoading = true;
+    });
+    AuthService authService = AuthService();
+    if (await authService.signInWithKakao(context) != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+    } else {
+      showErrorSnackBar(context, '카카오 로그인에 실패했어요');
+    }
+    setState(() {
+      isLoading = false;
+    });
   }
 
   /// 구글 로그인 처리 메서드
-  void _handleGoogleLogin(BuildContext context) {
-    // 구글 로그인 로직 구현 위치
-    _showLoginMessage(context, '구글');
+  Future<void> _handleGoogleLogin(BuildContext context) async {
+    setState(() {
+      isLoading = true;
+    });
+    AuthService authService = AuthService();
+
+    if (await authService.signInWithGoogle(context) != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+    } else {
+      showErrorSnackBar(context, '구글 로그인에 실패했어요');
+    }
+    setState(() {
+      isLoading = false;
+    });
   }
 
   /// 애플 로그인 처리 메서드
   void _handleAppleLogin(BuildContext context) {
     // 애플 로그인 로직 구현 위치
-    _showLoginMessage(context, '애플');
   }
 
   /// 테스트용 로그인 메시지 표시
-  void _showLoginMessage(BuildContext context, String provider) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$provider 로그인 시도 중...')),
-    );
-  }
 
   // 비밀번호 재설정 다이얼로그를 표시하는 메서드
   void _showResetPasswordDialog(BuildContext context) {

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:week02/screens/login_screen.dart';
+import 'package:week02/service/auth_service.dart';
 import 'package:week02/theme/foundation/app_theme.dart';
 import 'package:week02/theme/light_theme.dart';
 import 'package:week02/util/snackbar.dart';
@@ -63,7 +63,7 @@ class HomeScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(24),
               child: Text(
-                context.read<UserService>().user?.email ?? '로그인 필요',
+                context.read<UserService>().user?.displayName ?? '로그인 필요',
                 style: theme.typo.body1.copyWith(
                   color: theme.color.subtext,
                 ),
@@ -104,7 +104,9 @@ class HomeScreen extends StatelessWidget {
   // 로그아웃 처리 메서드
   void _handleLogout(BuildContext context) async {
     try {
-      await FirebaseAuth.instance.signOut();
+      AuthService authService = AuthService();
+      await authService.logout();
+
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),

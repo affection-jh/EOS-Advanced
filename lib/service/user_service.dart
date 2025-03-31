@@ -9,18 +9,18 @@ class UserService extends ChangeNotifier {
 
   User? get user => _user;
 
+  set user(User? value) {
+    if (_user != value) {
+      _user = value;
+      notifyListeners();
+    }
+  }
+
   UserService() {
     // Firebase 인증 상태 변경 리스너 등록
     FirebaseAuth.instance.authStateChanges().listen((User? user) {
       _user = user;
       notifyListeners();
     });
-  }
-
-  set user(User? value) {
-    if (_user != value) {
-      _user = value;
-      notifyListeners();
-    }
   }
 }

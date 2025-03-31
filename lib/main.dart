@@ -8,6 +8,7 @@ import 'package:week02/screens/login_screen.dart';
 import 'package:week02/service/user_service.dart';
 import 'package:week02/theme/foundation/app_theme.dart';
 import 'package:week02/theme/light_theme.dart';
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart' as Kakao;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,12 +16,12 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-/*
-  kakao.KakaoSdk.init(
-    nativeAppKey: 'bdf417c6d57c09fa0095ab9191ee389f',
-    javaScriptAppKey: 'fb50037e72e9b40759be77339bce13c8',
+
+  Kakao.KakaoSdk.init(
+    nativeAppKey: 'eb40ed4434e7b71432e482ad1c385d16',
+    javaScriptAppKey: '1927dec6f2569f4973fe36602f8fba2c',
   );
-*/
+  print("kakao 키 :" + await Kakao.KakaoSdk.origin);
   runApp(
     ChangeNotifierProvider(
       create: (context) => UserService(),

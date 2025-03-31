@@ -1,0 +1,2 @@
+D:/EOS/Assignment/week2/android/app/.cxx/Debug/1z313z5d/x86_64/CMakeFiles/edit_cache.dir
+D:/EOS/Assignment/week2/android/app/.cxx/Debug/1z313z5d/x86_64/CMakeFiles/rebuild_cache.dir
